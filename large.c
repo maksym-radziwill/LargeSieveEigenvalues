@@ -93,6 +93,7 @@ Parameters:
 #include <stdlib.h>
 #include <sys/times.h>
 #include <sys/time.h>
+#include <getopt.h>
 #include "unistd.h"
 
 void dsyev_(char *jobz, char *uplo, int *n, double *a, int *lda, 
