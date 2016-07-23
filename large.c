@@ -95,6 +95,8 @@ Parameters:
 #include <sys/time.h>
 #include "unistd.h"
 
+#define INT_LIMIT 24 /* Always n <= 2^24 */
+
 void dsyev_(char *jobz, char *uplo, int *n, double *a, int *lda, 
            double *w, double *work, int *lwork, int *info);
 
@@ -193,8 +195,8 @@ void add_factor(struct factor * f, int * size, int p, int alpha){
 
 struct factor * factorize(int n, const int * prime_table){
   int m = n; 
-  /* Our integers have never more than 10000 prime factors */
-  struct factor * f = (struct factor *) calloc(10000, sizeof(int)); 
+  /* Our integers have never more than 16 prime factors, since n < 2^16 always */
+  struct factor * f = (struct factor *) calloc(INT_LIMIT, sizeof(int)); 
   int size = 0; 
 
   /* replace by sqrt(m) afterwards */
@@ -310,7 +312,7 @@ void print_eigenvectors(double * matrix, double * w, int n){
   for(int i = 0; i < n; i++){
     printf("Eigenvector with eigenvalue %f (normalized %f)\n", w[i], w[i] / (double) n); 
     for(int j = 0; j < n; j++){
-      printf("[ %f ]\n", matrix[j + i*n]); 
+      printf("[ %10f ]\n", matrix[j + i*n]); 
     }
   }
   line_break(); 
@@ -319,14 +321,14 @@ void print_eigenvectors(double * matrix, double * w, int n){
 void print_eigenvalues(double * w, int n, int q){
   printf("Eigenvalues for q = %d, n = %d\n(and their normalized by %d counterparts): \n\n" , q, n, n); 
   for(int i = 0; i < n; i++){
-    printf("%6d: %f (normalized %f)\n", i + 1, w[i] , w[i] / (double) n); 
+    printf("%6d: %10f (normalized %10f)\n", i + 1, w[i] , w[i] / (double) n); 
   }
   line_break(); 
 }
 
 void print_plain_eigenvalues(double * w, int n){
   for(int i = 0; i < n; i++){
-    printf("%f\n", w[i] / (double) n); 
+    printf("%10f\n", w[i] / (double) n); 
   }
 }
 
@@ -356,6 +358,11 @@ int main(int argc, char ** argv)
   q = atoi(argv[1]); 
   if(q <= 0) usage(argv[0]);
 
+  if(q >= power(2,INT_LIMIT)){
+    printf("Error: q taken to be larger than %d\n", power(2,INT_LIMIT));
+    return -1; 
+  }
+    
   while ((c = getopt (argc, argv, "n:vrme")) != -1)
     switch (c){
       case 'n':	n = atoi(optarg); break;
