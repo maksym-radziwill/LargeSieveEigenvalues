@@ -93,6 +93,7 @@ Parameters:
 #include <stdlib.h>
 #include <sys/times.h>
 #include <sys/time.h>
+#include <getopt.h>
 #include "unistd.h"
 
 #define INT_LIMIT 24 /* Always n <= 2^24 */
