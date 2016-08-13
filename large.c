@@ -372,18 +372,43 @@ double eigenvalues_precision(double * w, int n){
   return machine_precision()*anorm; 
 }
 
+double power_double(double w, int n){
+  double a = w; 
+  for(int i = 1; i < n; i++){
+    a = w*a; 
+  }
+  return a; 
+}
+
+int log_double(double w){
+  int i = 1;
+  while(power_double(10,i)*w < 1)
+    i += 1; 
+  return i; 
+}
+
 void print_eigenvalues_precision(double * w, int n){
-  printf("\nNotes: Eigenvalues computed to precision %10f\n"
-	 "Normalized eigenvalues computed to precision %10f\n",
-	 eigenvalues_precision(w,n), eigenvalues_precision(w,n) / n + machine_precision()); 
+  int PREC = log_double(eigenvalues_precision(w,n));
+  int PREC2 = log_double(1/(double) n); 
+
+  printf("\nNotes: Eigenvalues computed to precision    %*e\n"
+	 "Normalized eigenvalues computed to precision %*e\n",
+	 PREC + 1, eigenvalues_precision(w,n),
+	 PREC + PREC2 + 2, eigenvalues_precision(w,n) / n + machine_precision()); 
   line_break();
 }
-			      
+
 void print_eigenvalues(double * w, int n, int q){
+
+  int PREC = log_double(eigenvalues_precision(w,n)) - 1; 
+  int PREC2 = log_double(1 / (double) n) - 1; 
+
+  printf("%d\n", PREC); 
   
   printf("Eigenvalues for q = %d, n = %d\n(and their normalized by %d counterparts): \n\n" , q, n, n); 
   for(int i = 0; i < n; i++){
-    printf("%6d: %10f (normalized %10f) \n", i + 1, w[i] , w[i] / (double) n); 
+    w[i] += eigenvalues_precision(w,n) + machine_precision();  /* This is to be deleted */
+    printf("%6d: %.*f (normalized %.*f) \n", i + 1, PREC, w[i], PREC + PREC2, w[i] / (double) n ); 
   }
 
   line_break(); 
