@@ -345,33 +345,6 @@ double * eigenvectors_precision(double * w, int n){
 }
 
 
-void print_eigenvectors(double * matrix, double * w, int n){
-
-  double * zerobd = eigenvectors_precision(w,n); 
-  
-  for(int i = 0; i < n; i++){
-    printf("Eigenvector with eigenvalue %10f (normalized %10f)\n", w[i], w[i] / (double) n);
-
-    if(zerobd[i] > 0.5){
-      printf("Skipping due to error bound exceeding 0.5\n\n");
-      continue;
-    }else{
-      printf("Error bound for acute angle: %10f\n", zerobd[i]); 
-      for(int j = 0; j < n; j++){
-	printf("[ %10f ]\n", matrix[j + i*n]); 
-      }
-    }
-  }
-  
-  free(zerobd); 
-  line_break(); 
-}
-
-double eigenvalues_precision(double * w, int n){
-  double anorm  = max (abs(w[0]), abs(w[n-1]));
-  return machine_precision()*anorm; 
-}
-
 double power_double(double w, int n){
   double a = w; 
   for(int i = 1; i < n; i++){
@@ -387,14 +360,45 @@ int log_double(double w){
   return i; 
 }
 
+double eigenvalues_precision(double * w, int n){
+  double anorm  = max (abs(w[0]), abs(w[n-1]));
+  return machine_precision()*anorm; 
+}
+
+void print_eigenvectors(double * matrix, double * w, int n){
+
+  double * zerobd = eigenvectors_precision(w,n); 
+
+  int PREC = log_double(eigenvalues_precision(w,n)) - 1; 
+  int PREC2 = log_double(1 / (double) n) - 1; 
+
+  for(int i = 0; i < n; i++){
+    printf("Eigenvector with eigenvalue %.*f (normalized %.*f)\n", PREC, w[i],
+	   PREC + PREC2, w[i] / (double) n);
+
+    if(zerobd[i] > 0.25){
+      printf("Skipping due to error bound exceeding 0.25\n\n");
+      continue;
+    }else{
+      printf("Error bound for acute angle: %.*f\n", PREC, zerobd[i]); 
+      for(int j = 0; j < n; j++){
+	printf("[ %.*f ]\n", PREC, matrix[j + i*n]); 
+      }
+    }
+  }
+  
+  free(zerobd); 
+  line_break(); 
+}
+
 void print_eigenvalues_precision(double * w, int n){
   int PREC = log_double(eigenvalues_precision(w,n));
   int PREC2 = log_double(1/(double) n); 
 
   printf("\nNotes: Eigenvalues computed to precision    %*e\n"
 	 "Normalized eigenvalues computed to precision %*e\n",
-	 PREC + 1, eigenvalues_precision(w,n),
-	 PREC + PREC2 + 2, eigenvalues_precision(w,n) / n + machine_precision()); 
+	 PREC, eigenvalues_precision(w,n),
+	 PREC + PREC2, eigenvalues_precision(w,n) / n + machine_precision()); 
   line_break();
 }
 
@@ -407,7 +411,7 @@ void print_eigenvalues(double * w, int n, int q){
   
   printf("Eigenvalues for q = %d, n = %d\n(and their normalized by %d counterparts): \n\n" , q, n, n); 
   for(int i = 0; i < n; i++){
-    w[i] += eigenvalues_precision(w,n) + machine_precision();  /* This is to be deleted */
+    if(w[i] < 0) w[i] = 0; 
     printf("%6d: %.*f (normalized %.*f) \n", i + 1, PREC, w[i], PREC + PREC2, w[i] / (double) n ); 
   }
 
@@ -415,8 +419,11 @@ void print_eigenvalues(double * w, int n, int q){
 }
 
 void print_plain_eigenvalues(double * w, int n){
+  int PREC = log_double(eigenvalues_precision(w,n)) - 1; 
+  int PREC2 = log_double(1 / (double) n) - 1; 
+
   for(int i = 0; i < n; i++){
-    printf("%10f\n", w[i] / (double) n); 
+    printf("%.*f\n", PREC + PREC2, w[i] / (double) n); 
   }
 }
 
