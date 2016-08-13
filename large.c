@@ -103,7 +103,7 @@ void dsyev_(char *jobz, char *uplo, int *n, double *a, int *lda,
 
 void ddisna_(char *job, int *m, int *n, double * d, double *sep, int *info); 
 
-double slamch_(char *c); 
+double dlamch_(char *c); 
 
 int * sieve (int n) {
   char * table = (char *) calloc(n + 1, sizeof(char));
@@ -317,7 +317,7 @@ void usage (char * s){
 
 double machine_precision(){
   char jobz = 'E';
-  return slamch_(&jobz); 
+  return dlamch_(&jobz); 
 }
 
 double max(double a, double b){
