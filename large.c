@@ -101,6 +101,10 @@ Parameters:
 void dsyev_(char *jobz, char *uplo, int *n, double *a, int *lda, 
            double *w, double *work, int *lwork, int *info);
 
+void ddisna_(char *job, int *m, int *n, double * d, double *sep, int *info); 
+
+double slamch_(char *c); 
+
 int * sieve (int n) {
   char * table = (char *) calloc(n + 1, sizeof(char));
   if(table == NULL){
@@ -309,21 +313,79 @@ void usage (char * s){
   exit(0); 
 }
 
+
+
+double machine_precision(){
+  char jobz = 'E';
+  return slamch_(&jobz); 
+}
+
+double max(double a, double b){
+  if(a > b) return a;
+  return b; 
+}
+
+double * eigenvectors_precision(double * w, int n){ 
+  char * job = "Eigenvectors";
+  int  N = n;
+  double * rcondz = calloc(N, sizeof(double));
+  double * zerobd = calloc(N, sizeof(double));
+  double anorm = max (abs(w[0]), abs(w[n-1])); 
+  int info;
+  double * W = w; 
+
+  ddisna_(job, &N, &N, W, rcondz, &info);
+
+  for(int i = 0; i < n; i++)
+    zerobd[i] = machine_precision()*(anorm / rcondz[i]); 
+
+  free(rcondz);
+
+  return zerobd; 
+}
+
+
 void print_eigenvectors(double * matrix, double * w, int n){
+
+  double * zerobd = eigenvectors_precision(w,n); 
+  
   for(int i = 0; i < n; i++){
-    printf("Eigenvector with eigenvalue %f (normalized %f)\n", w[i], w[i] / (double) n); 
-    for(int j = 0; j < n; j++){
-      printf("[ %10f ]\n", matrix[j + i*n]); 
+    printf("Eigenvector with eigenvalue %10f (normalized %10f)\n", w[i], w[i] / (double) n);
+
+    if(zerobd[i] > 0.5){
+      printf("Skipping due to error bound exceeding 0.5\n\n");
+      continue;
+    }else{
+      printf("Error bound for acute angle: %10f\n", zerobd[i]); 
+      for(int j = 0; j < n; j++){
+	printf("[ %10f ]\n", matrix[j + i*n]); 
+      }
     }
   }
+  
+  free(zerobd); 
   line_break(); 
 }
 
+double eigenvalues_precision(double * w, int n){
+  double anorm  = max (abs(w[0]), abs(w[n-1]));
+  return machine_precision()*anorm; 
+}
+
+void print_eigenvalues_precision(double * w, int n){
+  printf("\nNotes: Eigenvalues computed to precision %10f\n"
+	 "Normalized eigenvalues computed to precision %10f\n",
+	 eigenvalues_precision(w,n), eigenvalues_precision(w,n) / n + machine_precision()); 
+  line_break();
+}
+			      
 void print_eigenvalues(double * w, int n, int q){
+  
   printf("Eigenvalues for q = %d, n = %d\n(and their normalized by %d counterparts): \n\n" , q, n, n); 
   for(int i = 0; i < n; i++){
-    printf("%6d: %10f (normalized %10f)\n", i + 1, w[i] , w[i] / (double) n); 
+    printf("%6d: %10f (normalized %10f) \n", i + 1, w[i] , w[i] / (double) n); 
   }
+
   line_break(); 
 }
 
@@ -415,6 +477,8 @@ int main(int argc, char ** argv)
 
   if(plain) print_plain_eigenvalues(w, n);
   else      print_eigenvalues(w, n, q); 
+
+  print_eigenvalues_precision(w,n); 
   
   if(jobz == 'V') print_eigenvectors(a, w, dim); 
 
@@ -424,8 +488,10 @@ int main(int argc, char ** argv)
     else
       printf("Error encountered during computation\n"); 
   }
-  
-  free(work);
 
+  free(work);
+  free(a);
+  free(w); 
+  
   return 0;
 }
