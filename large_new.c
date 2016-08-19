@@ -98,8 +98,6 @@ Parameters:
 
 #define INT_LIMIT 24 /* Always n <= 2^24 */
 
-#define USEFLOAT 1
-
 #ifdef USEFLOAT
 #define TYPE float
 #else
@@ -454,7 +452,7 @@ void print_plain_eigenvalues(TYPE * w, int n){
   }
 }
 
-void memory_abort(int memusage, int memlimit){
+void memory_abort(size_t memusage, size_t memlimit){
   printf("Expected memory usage %d MB, exceeded limit %d MB\n", memusage, memlimit); 
   exit(-1); 
 }
@@ -477,8 +475,8 @@ int main(int argc, char ** argv)
   char           c;
   int    plain = 0; 
   int      dim = 0; 
-  int  memlimit = 1024*1024; 
-  int  memusage = 0; 
+  size_t  memlimit = 1024*1024; 
+  size_t  memusage = 0; 
 
   jobz = 'N';   /* Change this to V if also want eigenvectors -- these are obtained by printing the matrix */
   uplo = 'U';
@@ -499,7 +497,7 @@ int main(int argc, char ** argv)
     case 'r': printrow = 1; break;
     case 'm':	printmat = 1; break;
     case 'e': plain = 1; break;
-    case 'M' : memlimit = atoi(optarg); break; 
+    case 'M' : memlimit = (size_t) atoi(optarg); break; 
     default: usage(argv[0]); 
     }  
 
@@ -518,11 +516,11 @@ int main(int argc, char ** argv)
   
   lda = n;
 
-  memusage += sizeof(TYPE)*(lda*n + n)/(1024*1024); 
+  memusage += sizeof(TYPE)*lda*n/(1024*1024); 
   if(memusage > memlimit)
     memory_abort(memusage, memlimit); 
   
-  a = malloc(sizeof(TYPE)*lda*n);
+  a = malloc(sizeof(TYPE)*((size_t) lda)*((size_t) n));
   w = malloc(sizeof(TYPE)*n);
 
   int * values = generate_values(n, q);
@@ -545,7 +543,6 @@ int main(int argc, char ** argv)
 
   memusage -= (INT_LIMIT + 3)*sizeof(int)*n/(1024*1024); 
 
-
   lwork = -1;
   // get workspace information:
 #ifdef USEFLOAT
@@ -554,7 +551,7 @@ int main(int argc, char ** argv)
   dsyev_(&jobz, &uplo, &n, a, &lda, w, &wwork, &lwork, &info);
 #endif
   lwork = (int) wwork;
-  memusage += sizeof(TYPE)*lwork/(1024*1024);
+  memusage += (size_t) sizeof(TYPE)*lwork/(1024*1024);
   if(memusage > memlimit)
     memory_abort(memusage, memlimit); 
   work = malloc(sizeof(TYPE)*lwork);
