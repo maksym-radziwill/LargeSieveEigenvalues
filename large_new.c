@@ -88,6 +88,7 @@ Parameters:
 
 */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -501,7 +502,7 @@ int main(int argc, char ** argv)
     default: usage(argv[0]); 
     }  
 
-  memusage += (INT_LIMIT + 3)*sizeof(int)*n/(1024*1024); 
+  memusage += (size_t) (INT_LIMIT + 3)*sizeof(int)*n/(1024*1024); 
   if(memusage > memlimit)
     memory_abort(memusage, memlimit); 
   
@@ -516,7 +517,12 @@ int main(int argc, char ** argv)
   
   lda = n;
 
-  memusage += sizeof(TYPE)*lda*n/(1024*1024); 
+  if(((long long) lda)*((long long) n)*((long long) sizeof(TYPE)) > SIZE_MAX){
+    printf("n is too large\n");
+    return -1; 
+  }
+  
+  memusage += (size_t) sizeof(TYPE)*((size_t) lda)*((size_t) n)/(1024*1024); 
   if(memusage > memlimit)
     memory_abort(memusage, memlimit); 
   
